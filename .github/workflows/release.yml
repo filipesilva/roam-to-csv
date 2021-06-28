@@ -29,7 +29,12 @@ jobs:
           
       - run: java --version
       - run: bb --version
-      - run: bb native-image
+
+      - name: Build binary
+        run: bb native-image
+
+      - name: Create archive
+        run: tar -czf roam-to-csv-0.0.1-linux-amd64.tar.gz roam-to-csv
 
       - name: Add binary to release
         uses: ncipollo/release-action@v1
@@ -37,6 +42,6 @@ jobs:
           allowUpdates: true
           prerelease: true
           tag: "v0.0.1"
-          artifacts: "roam-to-csv"
+          artifacts: "roam-to-csv-0.0.0-linux-amd64.tar.gz"
           token: ${{ secrets.GITHUB_TOKEN }}
 
