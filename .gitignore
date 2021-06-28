@@ -1,2 +1,12 @@
+# deps cache
 .cpcache
+
+# cider files
+.nrepl-port
+
+# test files
+backup.edn
+backup.csv
+
+# generated jar and binaries.
 roam-to-csv*
