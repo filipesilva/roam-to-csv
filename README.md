@@ -1,8 +1,9 @@
 # roam-to-csv
 
-Convert a Roam Research EDN export into a CSV.
+Convert a Roam Research EDN export into CSV format.
 
 TODO: real usage examples.
+TODO: release download instructions.
 
 ``` clojure
 $ echo '{"a": {"b": 2}}' | ./jayfu -f '#(-> % :a :b)' -k keyword
