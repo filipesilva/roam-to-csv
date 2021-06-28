@@ -6,7 +6,7 @@ Given ./backup.edn, creates ./backup.csv with pages and blocks.
 
 TODO: release download instructions.
 
-``` clojure
+```bash
 $ ./roam-to-csv ./backup.edn && cat backup.csv
 uid,title,parent,string,order
 06-28-2021,"June 28th, 2021"
@@ -59,7 +59,7 @@ After this you should be able to run `bb native-image`.
 
 To see all available tasks in this project, run `bb tasks`:
 
-``` text
+```bash
 $ bb tasks
 The following tasks are available:
 
@@ -75,7 +75,7 @@ native-image Builds native image
 
 To run this example using Clojure, run:
 
-``` clojure
+```bash
 $ bb run-main --help
 Convert a Roam Research EDN export into CSV format.
 Given ./backup.edn, creates ./backup.csv with pages and blocks.
@@ -102,7 +102,7 @@ LZiyTHIGa,,06-28-2021,four,1
 
 To build the native image, run:
 
-``` text
+```bash
 $ bb native-image
 ```
 
