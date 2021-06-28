@@ -40,8 +40,14 @@ jobs:
       - run: java --version
       - run: bb --version
 
-      - name: Build binary
+      - name: Build non-windows binary
         run: bb native-image
+        if: matrix.os != 'windows-latest'
+
+      - name: Build windows binary
+        run: bb native-image
+        if: matrix.os == 'windows-latest'
+        shell: cmd
 
       - name: Create archive
         run: tar -czf roam-to-csv-0.0.0-${{ matrix.platform-name }}.tar.gz roam-to-csv
