@@ -2,12 +2,20 @@
 
 Convert a Roam Research EDN export into CSV format.
 
-TODO: real usage examples.
+Given ./backup.edn, creates ./backup.csv with pages and blocks.
+
 TODO: release download instructions.
 
 ``` clojure
-$ echo '{"a": {"b": 2}}' | ./jayfu -f '#(-> % :a :b)' -k keyword
-2
+$ ./roam-to-csv ./backup.edn && cat backup.csv
+uid,title,parent,string,order
+06-28-2021,"June 28th, 2021"
+59okYh_ss,,KVVSsviKY,three,1
+KVVSsviKY,,06-28-2021,one,0
+tPEEzk_7o,,KVVSsviKY,two,0
+FsF3FaIio,,LZiyTHIGa,five,0
+xNUTmfMSW,,FsF3FaIio,six,0
+LZiyTHIGa,,06-28-2021,four,1
 ```
 
 
@@ -62,20 +70,33 @@ graalvm      Checks GRAALVM_HOME env var
 native-image Builds native image
 ```
 
+
 ### Run
 
 To run this example using Clojure, run:
 
 ``` clojure
 $ bb run-main --help
-Usage:
-  -f, --func FUNCTION  identity  The function applied to JSON from stdin
-  -k, --key-fn KEY-FN  identity  The function applied to keywords
-  -h, --help
+Convert a Roam Research EDN export into CSV format.
+Given ./backup.edn, creates ./backup.csv with pages and blocks.
 
-$ echo '{"a": {"b": 2}}' | bb run-main -f '#(-> % :a :b)' -k keyword
-2
+Usage:
+  roam-to-csv ./backup.edn
+
+Options:
+  -h, --help  Show this message.
+
+$ bb run-main ./backup.edn && cat backup.csv
+uid,title,parent,string,order
+06-28-2021,"June 28th, 2021"
+59okYh_ss,,KVVSsviKY,three,1
+KVVSsviKY,,06-28-2021,one,0
+tPEEzk_7o,,KVVSsviKY,two,0
+FsF3FaIio,,LZiyTHIGa,five,0
+xNUTmfMSW,,FsF3FaIio,six,0
+LZiyTHIGa,,06-28-2021,four,1
 ```
+
 
 ### Build
 
