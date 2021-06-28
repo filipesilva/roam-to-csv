@@ -64,9 +64,15 @@
         {:keys [help]}                      options
         input-filename                      (first arguments)]
     (cond
-      help                        (print-help summary)
-      (str/blank? input-filename) (println "Invalid filename!")
-      :else                       (convert input-filename))))
+      help
+      (print-help summary)
+
+      (or (str/blank? input-filename)
+          (not (str/ends-with? input-filename ".edn")))
+      (println "Invalid filename, it must be non-empty and have .edn extension.")
+
+      :else
+      (convert input-filename))))
 
 (comment
   (-> "./backup.edn" slurp roam-edn->csv-table)
