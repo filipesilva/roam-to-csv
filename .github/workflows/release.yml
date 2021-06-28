@@ -6,7 +6,17 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            platform-name: linux-amd64
+          - os: macos-latest
+            platform-name: macos-amd64
+          - os: windows-latest
+            platform-name: windows-amd64
 
     steps:
       - name: Checkout
@@ -34,7 +44,7 @@ jobs:
         run: bb native-image
 
       - name: Create archive
-        run: tar -czf roam-to-csv-0.0.0-linux-amd64.tar.gz roam-to-csv
+        run: tar -czf roam-to-csv-0.0.0-${{ matrix.platform-name }}.tar.gz roam-to-csv
 
       - name: Add binary to release
         uses: ncipollo/release-action@v1
@@ -42,6 +52,6 @@ jobs:
           allowUpdates: true
           prerelease: true
           tag: "v0.0.1"
-          artifacts: "roam-to-csv-0.0.0-linux-amd64.tar.gz"
+          artifacts: "roam-to-csv-0.0.0-${{ matrix.platform-name }}.tar.gz"
           token: ${{ secrets.GITHUB_TOKEN }}
 
