@@ -5,7 +5,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,5 +29,5 @@ jobs:
           
       - run: java --version
       - run: bb --version
-      - run: bb run-main ./test-backup.edn
-        
+      - run: bb native-image
+
