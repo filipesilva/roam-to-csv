@@ -61,7 +61,7 @@ graalvm      Checks GRAALVM_HOME env var
 native-image Builds native image
 ```
 
-## Run
+### Run
 
 To run this example using Clojure, run:
 
