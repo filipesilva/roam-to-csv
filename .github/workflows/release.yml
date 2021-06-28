@@ -34,7 +34,7 @@ jobs:
         run: bb native-image
 
       - name: Create archive
-        run: tar -czf roam-to-csv-0.0.1-linux-amd64.tar.gz roam-to-csv
+        run: tar -czf roam-to-csv-0.0.0-linux-amd64.tar.gz roam-to-csv
 
       - name: Add binary to release
         uses: ncipollo/release-action@v1
