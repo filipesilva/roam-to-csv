@@ -31,3 +31,12 @@ jobs:
       - run: bb --version
       - run: bb native-image
 
+      - name: Add binary to release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          prerelease: true
+          tag: "v0.0.1"
+          artifacts: "roam-to-csv"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
