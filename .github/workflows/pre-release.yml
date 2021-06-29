@@ -4,7 +4,7 @@ name: Pre-Release
 # Then wait for all artifacts to be uploaded before releasing it.
 on:
   release:
-    types: [prerelease]
+    types: [prereleased]
 
 jobs:
   release:
