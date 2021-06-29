@@ -17,7 +17,7 @@ jobs:
             platform-name: macos-amd64
           - os: windows-latest
             platform-name: windows-amd64
-            bin-extension: .cmd
+            bin-extension: .exe
 
     steps:
       - name: Checkout
