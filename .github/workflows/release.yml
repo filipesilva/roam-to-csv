@@ -1,8 +1,10 @@
 name: Release
 
+# Run this job when a new pre-release is created on github.
+# Then wait for all artifacts to be uploaded before releasing it.
 on:
-  push:
-    branches: [ master ]
+  release:
+    types: [prerelease]
 
 jobs:
   release:
@@ -52,14 +54,14 @@ jobs:
         shell: cmd
 
       - name: Create archive
-        run: tar -czf roam-to-csv-0.0.0-${{ matrix.platform-name }}.tar.gz roam-to-csv${{ matrix.bin-extension }}
+        run: tar -czf roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz roam-to-csv${{ matrix.bin-extension }}
 
       - name: Add binary to release
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           prerelease: true
-          tag: "v0.0.1"
-          artifacts: "roam-to-csv-0.0.0-${{ matrix.platform-name }}.tar.gz"
+          tag: ${{ github.event.release.tag_name }}
+          artifacts: "roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz"
           token: ${{ secrets.GITHUB_TOKEN }}
 
