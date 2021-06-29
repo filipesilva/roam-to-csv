@@ -17,6 +17,7 @@ jobs:
             platform-name: macos-amd64
           - os: windows-latest
             platform-name: windows-amd64
+            bin-extension: .cmd
 
     steps:
       - name: Checkout
@@ -51,7 +52,7 @@ jobs:
         shell: cmd
 
       - name: Create archive
-        run: tar -czf roam-to-csv-0.0.0-${{ matrix.platform-name }}.tar.gz roam-to-csv
+        run: tar -czf roam-to-csv-0.0.0-${{ matrix.platform-name }}.tar.gz roam-to-csv${{ matrix.bin-extension }}
 
       - name: Add binary to release
         uses: ncipollo/release-action@v1
