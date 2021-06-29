@@ -2,9 +2,7 @@
 
 Convert a Roam Research EDN export into CSV format.
 
-Given ./backup.edn, creates ./backup.csv with pages and blocks.
-
-TODO: release download instructions.
+Given `./backup.edn`, creates `./backup.csv` with pages and blocks.
 
 ```bash
 $ ./roam-to-csv ./backup.edn && cat backup.csv
@@ -17,6 +15,20 @@ FsF3FaIio,,LZiyTHIGa,five,0
 xNUTmfMSW,,FsF3FaIio,six,0
 LZiyTHIGa,,06-28-2021,four,1
 ```
+
+
+## Installation
+
+You can find binaries for Linux, MacOS, and Windows in https://github.com/filipesilva/roam-to-csv/releases.
+
+Download the archive for your respective OS, unpack it, and inside you will have a `roam-to-csv` binary you can run.
+
+On MacOS you'll get a popup about the developer not being verified the first time you execute it.
+First click "Cancel" instead of "Move to Bin" on that popup. 
+Then open the "Security & Privacy" settings panel, "General" tab, and click the "Allow Anyway" button on the notice about `roam-to-csv.
+Now you should be able to run it.
+
+You can also build from source and run that code, or any modifications you add, by following the instructions below.
 
 
 ## Development
