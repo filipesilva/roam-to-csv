@@ -4,7 +4,8 @@
             [clojure.data.csv :as csv]
             [clojure.tools.cli :as cli]
             [clojure.pprint :as pprint]
-            [datascript.core :as d])
+            [datascript.core :as d]
+            [tick.alpha.api :as t])
   (:import
    [java.io StringWriter])
   ;; Needed for standalone jar to invoke with java
@@ -28,30 +29,40 @@
 (defn read-db [edn-string]
   (edn/read-string {:readers d/data-readers} edn-string))
 
+(defn format-ms [ms]
+  (-> ms (t/new-duration :millis) t/instant str))
+
 (def pages-query
-  '[:find ?page-uid ?title
+  '[:find ?page-uid ?title ?create-time
     :where
     [?p :block/uid ?page-uid]
-    [?p :node/title ?title]])
+    [?p :node/title ?title]
+    [?p :create/time ?create-time]])
 
 (def blocks-query
-  '[:find  ?block-uid ?parent-uid ?string ?order
+  '[:find ?block-uid ?parent-uid ?string ?order ?create-time
     :where
     [?b :block/uid ?block-uid]
     [?b :block/string ?string]
     [?b :block/order ?order]
     [?p :block/children ?b]
-    [?p :block/uid ?parent-uid]])
+    [?p :block/uid ?parent-uid]
+    [?b :create/time ?create-time]])
+
+(defn page-csv [[uid title create-time]]
+  [uid title nil nil nil (format-ms create-time)])
+
+(defn block-csv [[uid parent string order create-time]]
+  [uid nil parent string order (format-ms create-time)])
 
 (defn roam-edn->csv-table [edn-string]
   (let [db       (read-db edn-string)
         pages    (d/q pages-query db)
         blocks   (d/q blocks-query db)
-        header   ["uid" "title" "parent" "string" "order"]
-        no-title (fn [[uid & rest]] (apply vector uid nil rest))]
+        header   ["uid" "title" "parent" "string" "order" "create-time"]]
     (vec (concat [header]
-                 pages
-                 (map no-title blocks)))))
+                 (map page-csv pages)
+                 (map block-csv blocks)))))
 
 (defn write-csv [data writer]
   (csv/write-csv writer data))
