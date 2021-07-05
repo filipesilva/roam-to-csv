@@ -6,14 +6,34 @@ Given `./backup.edn`, creates `./backup.csv` with pages and blocks.
 
 ```bash
 $ ./roam-to-csv ./backup.edn && cat backup.csv
-uid,title,parent,string,order
-06-28-2021,"June 28th, 2021"
-59okYh_ss,,KVVSsviKY,three,1
-KVVSsviKY,,06-28-2021,one,0
-tPEEzk_7o,,KVVSsviKY,two,0
-FsF3FaIio,,LZiyTHIGa,five,0
-xNUTmfMSW,,FsF3FaIio,six,0
-LZiyTHIGa,,06-28-2021,four,1
+uid,title,parent,string,order,create-time
+06-28-2021,"June 28th, 2021",,,,2021-06-28T13:08:13.256Z
+FsF3FaIio,,LZiyTHIGa,five,0,2021-06-28T13:08:25.145Z
+KVVSsviKY,,06-28-2021,one,0,2021-06-28T13:08:15.015Z
+xNUTmfMSW,,FsF3FaIio,six,0,2021-06-28T13:08:26.471Z
+LZiyTHIGa,,06-28-2021,four,1,2021-06-28T13:08:23.257Z
+tPEEzk_7o,,KVVSsviKY,two,0,2021-06-28T13:08:16.514Z
+59okYh_ss,,KVVSsviKY,three,1,2021-06-28T13:08:18.451Z
+```
+
+You can also use it to format a Roam export for readability:
+```bash
+$ ./roam-to-csv --pretty-print ./backup.edn && cat backup.pp.edn
+#datascript/DB {:schema
+                {:create/user
+                 {:db/valueType :db.type/ref,
+                  :db/cardinality :db.cardinality/one},
+                 :plugin/id {:db/unique :db.unique/identity},
+                 :node/subpages
+                 {:db/valueType :db.type/ref,
+                  :db/cardinality :db.cardinality/many},
+# ... lots of lines ...
+                 [10 :block/string "six" 536870946]
+                 [10 :block/uid "xNUTmfMSW" 536870941]
+                 [10 :create/time 1624885706471 536870941]
+                 [10 :create/user 3 536870941]
+                 [10 :edit/time 1624885709593 536870946]
+                 [10 :edit/user 3 536870941]]}
 ```
 
 
@@ -96,17 +116,18 @@ Usage:
   roam-to-csv ./backup.edn
 
 Options:
-  -h, --help  Show this message.
+  -h, --help          Show this message.
+  -p, --pretty-print  Pretty print the EDN export only.
 
 $ bb run-main ./backup.edn && cat backup.csv
-uid,title,parent,string,order
-06-28-2021,"June 28th, 2021"
-59okYh_ss,,KVVSsviKY,three,1
-KVVSsviKY,,06-28-2021,one,0
-tPEEzk_7o,,KVVSsviKY,two,0
-FsF3FaIio,,LZiyTHIGa,five,0
-xNUTmfMSW,,FsF3FaIio,six,0
-LZiyTHIGa,,06-28-2021,four,1
+uid,title,parent,string,order,create-time
+06-28-2021,"June 28th, 2021",,,,2021-06-28T13:08:13.256Z
+FsF3FaIio,,LZiyTHIGa,five,0,2021-06-28T13:08:25.145Z
+KVVSsviKY,,06-28-2021,one,0,2021-06-28T13:08:15.015Z
+xNUTmfMSW,,FsF3FaIio,six,0,2021-06-28T13:08:26.471Z
+LZiyTHIGa,,06-28-2021,four,1,2021-06-28T13:08:23.257Z
+tPEEzk_7o,,KVVSsviKY,two,0,2021-06-28T13:08:16.514Z
+59okYh_ss,,KVVSsviKY,three,1,2021-06-28T13:08:18.451Z
 ```
 
 
