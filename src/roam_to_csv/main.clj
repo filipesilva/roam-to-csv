@@ -53,18 +53,14 @@
                  pages
                  (map no-title blocks)))))
 
-(defn pretty-print-edn [input-filename]
-  (let [output-filename (str/replace input-filename #".edn$" ".pp.edn")
-        string-writer   (StringWriter.)
-        db              (-> input-filename slurp read-db)]
-    (pprint/pprint db string-writer)
-    (spit output-filename (str string-writer))))
+(defn write-csv [data writer]
+  (csv/write-csv writer data))
 
-(defn convert [input-filename]
-  (let [output-filename (str/replace input-filename #".edn$" ".csv")
+(defn slurp-convert-spit [input-filename new-ext read-fn write-fn]
+  (let [output-filename (str/replace input-filename #".edn$" new-ext)
         string-writer   (StringWriter.)
-        table           (-> input-filename slurp roam-edn->csv-table)]
-    (csv/write-csv string-writer table)
+        data            (-> input-filename slurp read-fn)]
+    (write-fn data string-writer)
     (spit output-filename (str string-writer))))
 
 (defn -main [& args]
@@ -80,13 +76,13 @@
       (println "Invalid filename, it must be non-empty and have .edn extension.")
 
       pretty-print
-      (pretty-print-edn input-filename)
+      (slurp-convert-spit input-filename ".pp.edn" read-db pprint/pprint)
 
       :else
-      (convert input-filename))))
+      (slurp-convert-spit input-filename ".csv" roam-edn->csv-table write-csv))))
 
 (comment
   (-> "./backup.edn" slurp roam-edn->csv-table)
-  (convert "./backup.edn")
+  (slurp-convert-spit "./backup.edn" ".csv" roam-edn->csv-table write-csv)
   ;
   )
