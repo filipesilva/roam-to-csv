@@ -3,7 +3,7 @@
             [clojure.edn :as edn]
             [clojure.data.csv :as csv]
             [clojure.tools.cli :as cli]
-            [clojure.java.io :as io]
+            [clojure.pprint :as pprint]
             [datascript.core :as d])
   (:import
    [java.io StringWriter])
@@ -11,7 +11,8 @@
   (:gen-class))
 
 (def cli-options
-  [["-h" "--help" "Show this message."]])
+  [["-h" "--help" "Show this message."]
+   ["-p" "--pretty-print" "Pretty print the EDN export only."]])
 
 (defn print-help [summary]
   (println "Convert a Roam Research EDN export into CSV format.")
@@ -52,6 +53,13 @@
                  pages
                  (map no-title blocks)))))
 
+(defn pretty-print-edn [input-filename]
+  (let [output-filename (str/replace input-filename #".edn$" ".pp.edn")
+        string-writer   (StringWriter.)
+        db              (-> input-filename slurp read-db)]
+    (pprint/pprint db string-writer)
+    (spit output-filename (str string-writer))))
+
 (defn convert [input-filename]
   (let [output-filename (str/replace input-filename #".edn$" ".csv")
         string-writer   (StringWriter.)
@@ -61,7 +69,7 @@
 
 (defn -main [& args]
   (let [{:keys [options arguments summary]} (cli/parse-opts args cli-options)
-        {:keys [help]}                      options
+        {:keys [help pretty-print]}         options
         input-filename                      (first arguments)]
     (cond
       help
@@ -70,6 +78,9 @@
       (or (str/blank? input-filename)
           (not (str/ends-with? input-filename ".edn")))
       (println "Invalid filename, it must be non-empty and have .edn extension.")
+
+      pretty-print
+      (pretty-print-edn input-filename)
 
       :else
       (convert input-filename))))
