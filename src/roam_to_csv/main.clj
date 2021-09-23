@@ -11,9 +11,17 @@
   ;; Needed for standalone jar to invoke with java
   (:gen-class))
 
+(defn read-db [edn-string]
+  (edn/read-string {:readers d/data-readers} edn-string))
+
+(defn read-query [edn-string]
+  (edn/read-string edn-string))
+
 (def cli-options
-  [["-h" "--help" "Show this message."]
-   ["-p" "--pretty-print" "Pretty print the EDN export only."]])
+  [["-q" "--query QUERY" "Use a custom Datalog query to create the CSV."
+    :parse-fn read-query]
+   ["-p" "--pretty-print" "Pretty print the EDN export only."]
+   ["-h" "--help" "Show this message."]])
 
 (defn print-help [summary]
   (println "Convert a Roam Research EDN export into CSV format.")
@@ -25,9 +33,6 @@
   (println "Options:")
   ;; Tools.cli provides a :summary key that can be used for printing:
   (println summary))
-
-(defn read-db [edn-string]
-  (edn/read-string {:readers d/data-readers} edn-string))
 
 (defn format-ms [ms]
   (-> ms (t/new-duration :millis) t/instant str))
@@ -55,14 +60,31 @@
 (defn block-csv [[uid parent string order create-time]]
   [uid nil parent string order (format-ms create-time)])
 
-(defn roam-edn->csv-table [edn-string]
-  (let [db       (read-db edn-string)
-        pages    (d/q pages-query db)
-        blocks   (d/q blocks-query db)
-        header   ["uid" "title" "parent" "string" "order" "create-time"]]
-    (vec (concat [header]
-                 (map page-csv pages)
-                 (map block-csv blocks)))))
+(defn query->header
+  "Extract the :find bindings as strings, stripped of the initial ? if any."
+  [query]
+  (->> (partition-by keyword? query)
+       second
+       (map str)
+       (map #(if (str/starts-with? % "?") (subs % 1) %))
+       vec))
+
+(defn roam-edn->csv-table
+  "Read edn-string as a database, and return a vector of vectors with the output of a query.
+   If no query is provided, outputs blocks and pages."
+  ([edn-string]
+   (let [db       (read-db edn-string)
+         pages    (d/q pages-query db)
+         blocks   (d/q blocks-query db)
+         header   ["uid" "title" "parent" "string" "order" "create-time"]]
+     (vec (concat [header]
+                  (map page-csv pages)
+                  (map block-csv blocks)))))
+  ([query edn-string]
+   (let [db       (read-db edn-string)
+         res      (d/q query db)
+         header   (query->header query)]
+     (into [header] (map vec res)))))
 
 (defn write-csv [data writer]
   (csv/write-csv writer data))
@@ -76,7 +98,7 @@
 
 (defn -main [& args]
   (let [{:keys [options arguments summary]} (cli/parse-opts args cli-options)
-        {:keys [help pretty-print]}         options
+        {:keys [help pretty-print query]}   options
         input-filename                      (first arguments)]
     (cond
       help
@@ -89,11 +111,34 @@
       pretty-print
       (slurp-convert-spit input-filename ".pp.edn" read-db pprint/pprint)
 
+      query
+      (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table (:query options)) write-csv)
+
       :else
       (slurp-convert-spit input-filename ".csv" roam-edn->csv-table write-csv))))
 
 (comment
+  ;; Read the file as a Datascript database
+  (-> "./backup.edn" slurp read-db)
+
+  ;; Basic query
   (-> "./backup.edn" slurp roam-edn->csv-table)
+
+  ;; Custom query for uids+blocks
+  (->> "./backup.edn" slurp 
+      (roam-edn->csv-table
+       '[:find ?uid ?string
+         :where
+         [?b :block/uid ?uid]
+         [?b :block/string ?string]]))
+  
+  ; Custom query for all attrs
+  (->> "./backup.edn" slurp
+       (roam-edn->csv-table
+        '[:find (distinct ?attr)
+          :where
+          [?e ?attr]]))
+
+  ;; Output basic query as CSV
   (slurp-convert-spit "./backup.edn" ".csv" roam-edn->csv-table write-csv)
-  ;
   )

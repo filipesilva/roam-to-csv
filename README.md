@@ -36,6 +36,26 @@ $ ./roam-to-csv --pretty-print ./backup.edn && cat backup.pp.edn
                  [10 :edit/user 3 536870941]]}
 ```
 
+You can write your own [Datalog queries](http://www.learndatalogtoday.org/) to output as CSV.
+Please see [Datomic's Query Reference](https://docs.datomic.com/cloud/query/query-data-reference.html) for advanced usage.
+```bash
+# Output only :block/uid and :block/string
+$ ./roam-to-csv ./backup.edn --query "[:find ?uid ?string :where [?b :block/uid ?uid] [?b :block/string ?string]]" && cat backup.csv
+uid,string
+FsF3FaIio,five
+KVVSsviKY,one
+xNUTmfMSW,six
+LZiyTHIGa,four
+59okYh_ss,three
+tPEEzk_7o,two
+
+# Output all known attributes
+
+$ ./roam-to-csv ./backup.edn --query "[:find (distinct ?attr) :where [?e ?attr]]" && cat backup.csv
+(distinct ?attr)
+#{:create/user :block/string :version/nonce :create/time :node/title :edit/user :user/display-name :block/children :log/id :block/uid :block/open :user/uid :edit/time :block/parents :block/order :user/photo-url :block/page :version/id :version/upgraded-nonce}
+```
+
 
 ## Installation
 
@@ -116,8 +136,9 @@ Usage:
   roam-to-csv ./backup.edn
 
 Options:
-  -h, --help          Show this message.
+  -q, --query QUERY   Use a custom Datalog query to create the CSV.
   -p, --pretty-print  Pretty print the EDN export only.
+  -h, --help          Show this message.
 
 $ bb run-main ./backup.edn && cat backup.csv
 uid,title,parent,string,order,create-time
