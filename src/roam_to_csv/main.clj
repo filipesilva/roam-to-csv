@@ -42,7 +42,7 @@
     :where
     [?p :block/uid ?page-uid]
     [?p :node/title ?title]
-    [?p :create/time ?create-time]])
+    [(get-else $ ?p :create/time 0) ?create-time]])
 
 (def blocks-query
   '[:find ?block-uid ?parent-uid ?string ?order ?create-time
@@ -52,7 +52,7 @@
     [?b :block/order ?order]
     [?p :block/children ?b]
     [?p :block/uid ?parent-uid]
-    [?b :create/time ?create-time]])
+    [(get-else $ ?p :create/time 0) ?create-time]])
 
 (defn page-csv [[uid title create-time]]
   [uid title nil nil nil (format-ms create-time)])
