@@ -11,3 +11,6 @@ backup.pp.edn
 
 # generated jar and binaries.
 roam-to-csv*
+
+# clj-kondo cache
+.clj-kondo/.cache
