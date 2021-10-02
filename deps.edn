@@ -3,10 +3,7 @@
         org.clojure/tools.cli {:mvn/version "1.0.206"}
         datascript/datascript {:mvn/version "1.2.1"}
         tick/tick {:mvn/version "0.4.24-alpha"}}
- :aliases {:uberjar
-           {:replace-deps
-            {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
-            :exec-fn hf.depstar/uberjar
-            :exec-args {:jar roam-to-csv.jar
-                        :main-class roam-to-csv.main
-                        :aot true}}}}
+ :aliases
+ {:native-deps {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "0.1.0"}}}
+  :build {:deps {io.github.clojure/tools.build {:git/tag "v0.3.0" :git/sha "e418fc9"}}
+          :ns-default build}}}

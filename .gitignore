@@ -14,3 +14,6 @@ roam-to-csv*
 
 # clj-kondo cache
 .clj-kondo/.cache
+
+# build files
+target/

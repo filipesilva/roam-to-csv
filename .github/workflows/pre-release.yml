@@ -25,20 +25,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       
-      - uses: DeLaGuardo/setup-graalvm@4.0
+      - uses: DeLaGuardo/setup-graalvm@5.0
         with:
-          graalvm: '21.1.0'
+          graalvm: '21.2.0'
           java: 'java11'
+          arch: 'amd64'
 
       - name: Install clojure tools
-        uses: DeLaGuardo/setup-clojure@3.4
+        uses: DeLaGuardo/setup-clojure@3.5
         with:
-          cli: 1.10.3.855
+          cli: 1.10.3.933
           
       - name: Setup Babashka
         uses: turtlequeue/setup-babashka@v1.3.0
         with:
-          babashka-version: 0.4.6
+          babashka-version: 0.6.1
           
       - run: java --version
       - run: bb --version

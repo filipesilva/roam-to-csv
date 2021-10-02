@@ -6,8 +6,9 @@
   run-main {:doc "Run main"
             :task (apply clojure "-M -m roam-to-csv.main" *command-line-args*)}
   uberjar {:doc "Builds uberjar"
-           :task (when (seq (fs/modified-since "roam-to-csv.jar" "src"))
-                   (clojure "-X:uberjar"))}
+           :task (when (seq (fs/modified-since "roam-to-csv.jar"
+                                               ["deps.edn" "build.clj" "src"]))
+                   (clojure "-T:build uber"))}
   run-uber {:doc "Run uberjar"
             :depends [uberjar]
             :task (apply shell "java -jar roam-to-csv.jar" *command-line-args*)}
@@ -30,8 +31,6 @@
                                              (if windows?
                                                "native-image.cmd"
                                                "native-image")))
-                               "-H:Name=roam-to-csv"
                                "-jar" "roam-to-csv.jar"
-                               "--initialize-at-build-time"
                                "--no-fallback"
-                               "--no-server"))}}}
+                               "-H:Name=roam-to-csv"))}}}
