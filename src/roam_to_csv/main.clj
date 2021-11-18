@@ -1,5 +1,6 @@
 (ns roam-to-csv.main
-  (:require [clojure.string :as str]
+  (:require [roam-to-csv.athens :as athens]
+            [clojure.string :as str]
             [clojure.edn :as edn]
             [clojure.data.csv :as csv]
             [clojure.tools.cli :as cli]
@@ -17,10 +18,14 @@
 (defn read-query [edn-string]
   (edn/read-string edn-string))
 
+;; TODO:
+;; --query-file
+;; --query-params
 (def cli-options
   [["-q" "--query QUERY" "Use a custom Datalog query to create the CSV."
     :parse-fn read-query]
    ["-p" "--pretty-print" "Pretty print the EDN export only."]
+   ["-c" "--convert" "Convert an input csv to another format [athens.transit]"]
    ["-h" "--help" "Show this message."]])
 
 (defn print-help [summary]
@@ -69,15 +74,16 @@
        (map #(if (str/starts-with? % "?") (subs % 1) %))
        vec))
 
+(def default-header ["uid" "title" "parent" "string" "order" "create-time"])
+
 (defn roam-edn->csv-table
   "Read edn-string as a database, and return a vector of vectors with the output of a query.
    If no query is provided, outputs blocks and pages."
   ([edn-string]
    (let [db       (read-db edn-string)
          pages    (d/q pages-query db)
-         blocks   (d/q blocks-query db)
-         header   ["uid" "title" "parent" "string" "order" "create-time"]]
-     (vec (concat [header]
+         blocks   (d/q blocks-query db)]
+     (vec (concat [default-header]
                   (map page-csv pages)
                   (map block-csv blocks)))))
   ([query edn-string]
@@ -86,19 +92,44 @@
          header   (query->header query)]
      (into [header] (map vec res)))))
 
+(defn convert-csv [_format csv-str]
+  ;; Only supports athens.transit format now
+  (let [csv    (csv/read-csv csv-str)
+        header (first csv)
+        data   (rest csv)]
+    (if-not (= header default-header)
+      (do
+        (println "Unsupported header format for conversion")
+        (println (str "  got " header))
+        (println (str "  but only support " default-header))
+        ;; TODO: really should have force exit with error codes.
+        "")
+      (let [conn (athens/create-conn)]
+        (doseq [[uid title parent string order] data]
+          (if (empty? title)
+            (athens/add-block! conn uid parent string order)
+            (athens/add-page! conn uid title)))
+        (athens/conn-to-str conn)))))
+
 (defn write-csv [data writer]
   (csv/write-csv writer data))
 
+(defn write-str [data writer]
+  (.write writer data))
+
 (defn slurp-convert-spit [input-filename new-ext read-fn write-fn]
-  (let [output-filename (str/replace input-filename #".edn$" new-ext)
-        string-writer   (StringWriter.)
-        data            (-> input-filename slurp read-fn)]
+  (let [filename-without-ext (subs input-filename 0 (str/last-index-of input-filename "."))
+        output-filename      (str filename-without-ext new-ext)
+        string-writer        (StringWriter.)
+        data                 (-> input-filename slurp read-fn)]
+    ;; TODO: this writer-fn thing is super weird, should be operating just on strings instead.
     (write-fn data string-writer)
     (spit output-filename (str string-writer))))
 
 (defn -main [& args]
   (let [{:keys [options arguments summary]} (cli/parse-opts args cli-options)
-        {:keys [help pretty-print query]}   options
+        {:keys [help pretty-print query
+                convert]}                   options
         input-filename                      (first arguments)]
     (cond
       help
@@ -113,6 +144,10 @@
 
       query
       (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table (:query options)) write-csv)
+
+      convert
+      ;; Only supports athens.transit format now
+      (slurp-convert-spit input-filename ".transit" (partial convert-csv convert) write-str)
 
       :else
       (slurp-convert-spit input-filename ".csv" roam-edn->csv-table write-csv))))
@@ -141,4 +176,9 @@
 
   ;; Output basic query as CSV
   (slurp-convert-spit "./backup.edn" ".csv" roam-edn->csv-table write-csv)
+
+  ;; Convert to athens transit
+  (slurp-convert-spit "./backup.csv" ".transit" (partial convert-csv "athens.transit") write-str)
+
+  ;;
   )

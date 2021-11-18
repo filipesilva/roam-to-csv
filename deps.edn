@@ -2,6 +2,7 @@
         org.clojure/data.csv {:mvn/version "1.0.0"}
         org.clojure/tools.cli {:mvn/version "1.0.206"}
         datascript/datascript {:mvn/version "1.2.1"}
+        datascript-transit/datascript-transit {:mvn/version "0.3.0"}
         tick/tick {:mvn/version "0.4.24-alpha"}}
  :aliases
  {:native-deps {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "0.1.0"}}}

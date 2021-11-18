@@ -8,6 +8,7 @@
 backup.edn
 backup.csv
 backup.pp.edn
+backup.transit
 
 # generated jar and binaries.
 roam-to-csv*
@@ -17,3 +18,6 @@ roam-to-csv*
 
 # build files
 target/
+
+# Mac stuff
+.DS_Store
