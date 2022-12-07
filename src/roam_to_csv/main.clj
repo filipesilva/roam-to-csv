@@ -22,7 +22,8 @@
 ;; --query-file
 ;; --query-params
 (def cli-options
-  [["-q" "--query QUERY" "Use a custom Datalog query to create the CSV."
+  [["-e" "--extra" "Include extra information, like edit time and user."]
+   ["-q" "--query QUERY" "Use a custom Datalog query to create the CSV."
     :parse-fn read-query]
    ["-p" "--pretty-print" "Pretty print the EDN export only."]
    ["-c" "--convert" "Convert an input csv to another format [athens.transit]"]
@@ -58,6 +59,25 @@
     [?p :block/children ?b]
     [?p :block/uid ?parent-uid]
     [(get-else $ ?p :create/time 0) ?create-time]])
+
+(def blocks-extra-query
+  '[:find ?block-uid ?parent-uid ?string ?order
+          ?create-time ?create-user-uid ?create-user-display-name
+          ?edit-time ?edit-user-uid ?edit-user-display-name
+    :where
+    [?b :block/uid ?block-uid]
+    [?b :block/string ?string]
+    [?b :block/order ?order]
+    [?p :block/children ?b]
+    [?p :block/uid ?parent-uid]
+    [(get-else $ ?p :create/time 0) ?create-time]
+    [(get-else $ ?p :create/user 0) ?create-user]
+    [(get-else $ ?create-user :user/uid "") ?create-user-uid]
+    [(get-else $ ?create-user :user/display-name "") ?create-user-display-name]
+    [(get-else $ ?p :edit/time 0) ?edit-time]
+    [(get-else $ ?p :edit/user 0) ?edit-user]
+    [(get-else $ ?edit-user :user/uid "") ?edit-user-uid]
+    [(get-else $ ?edit-user :user/display-name "") ?edit-user-display-name]])
 
 (defn page-csv [[uid title create-time]]
   [uid title nil nil nil (format-ms create-time)])
@@ -128,7 +148,7 @@
 
 (defn -main [& args]
   (let [{:keys [options arguments summary]} (cli/parse-opts args cli-options)
-        {:keys [help pretty-print query
+        {:keys [help pretty-print query extra
                 convert]}                   options
         input-filename                      (first arguments)]
     (cond
@@ -144,6 +164,10 @@
 
       query
       (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table (:query options)) write-csv)
+
+
+      extra
+      (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table blocks-extra-query) write-csv)
 
       convert
       ;; Only supports athens.transit format now
@@ -176,6 +200,9 @@
 
   ;; Output basic query as CSV
   (slurp-convert-spit "./backup.edn" ".csv" roam-edn->csv-table write-csv)
+
+  ;; Output a query as CSV
+  (slurp-convert-spit "./backup.edn" ".csv" (partial roam-edn->csv-table blocks-extra-query) write-csv)
 
   ;; Convert to athens transit
   (slurp-convert-spit "./backup.csv" ".transit" (partial convert-csv "athens.transit") write-str)
