@@ -56,6 +56,23 @@ $ ./roam-to-csv ./backup.edn --query "[:find (distinct ?attr) :where [?e ?attr]]
 #{:create/user :block/string :version/nonce :create/time :node/title :edit/user :user/display-name :block/children :log/id :block/uid :block/open :user/uid :edit/time :block/parents :block/order :user/photo-url :block/page :version/id :version/upgraded-nonce}
 ```
 
+All options:
+
+```bash
+$ ./roam-to-csv --help
+Convert a Roam Research EDN export into CSV format.
+Given ./backup.edn, creates ./backup.csv with pages and blocks.
+
+Usage:
+  roam-to-csv ./backup.edn
+
+Options:
+  -e, --extra         Include extra information, like edit time and user.
+  -q, --query QUERY   Use a custom Datalog query to create the CSV.
+  -p, --pretty-print  Pretty print the EDN export only.
+  -c, --convert       Convert an input csv to another format [athens.transit]
+  -h, --help          Show this message.
+```
 
 ## Installation
 
