@@ -1,7 +1,8 @@
 (ns roam-to-csv.roam
   (:require [datascript.core :as d]
             [clojure.data.json :as json]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [tick.alpha.api :as t]))
 
 (def schema
   {:block/uid      {:db/unique :db.unique/identity}
@@ -18,14 +19,14 @@
 (def orphans-page-title "orphans")
 
 (defn merge-time-and-user
-  [x [create-user-time create-user-uid edit-user-time edit-user-uid]]
+  [x [create-user-time create-user-uid _ edit-user-time edit-user-uid]]
   (merge x
          (when create-user-time
-           {:create/time create-user-time})
+           {:create/time (-> create-user-time t/instant inst-ms)})
          (when create-user-uid
            {:create/user {:user/uid create-user-uid}})
          (when edit-user-time
-           {:edit/time edit-user-time})
+           {:edit/time (-> edit-user-time t/instant inst-ms)})
          (when edit-user-uid
            {:edit/user {:user/uid edit-user-uid}})))
 
