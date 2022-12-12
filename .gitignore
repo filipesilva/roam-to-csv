@@ -9,6 +9,7 @@ backup.edn
 backup.csv
 backup.pp.edn
 backup.transit
+backup.json
 
 # generated jar and binaries.
 roam-to-csv*

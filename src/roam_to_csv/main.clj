@@ -44,47 +44,77 @@
 (defn format-ms [ms]
   (-> ms (t/new-duration :millis) t/instant str))
 
-(def pages-query
-  '[:find ?page-uid ?title ?create-time
+(def pages-default-query
+  '[:find ?uid ?title ?create-time
     :where
-    [?p :block/uid ?page-uid]
+    [?p :block/uid ?uid]
     [?p :node/title ?title]
     [(get-else $ ?p :create/time 0) ?create-time]])
 
-(def blocks-query
-  '[:find ?block-uid ?parent-uid ?string ?order ?create-time
+(def blocks-default-query
+  '[:find ?uid ?parent ?string ?order ?create-time
     :where
-    [?b :block/uid ?block-uid]
+    [?b :block/uid ?uid]
     [?b :block/string ?string]
     [?b :block/order ?order]
     [?p :block/children ?b]
-    [?p :block/uid ?parent-uid]
+    [?p :block/uid ?parent]
     [(get-else $ ?p :create/time 0) ?create-time]])
 
-(def blocks-extra-query
-  '[:find ?block-uid ?parent-uid ?string ?order
-          ?create-time ?create-user-uid ?create-user-display-name
-          ?edit-time ?edit-user-uid ?edit-user-display-name
-    :where
-    [?b :block/uid ?block-uid]
-    [?b :block/string ?string]
-    [?b :block/order ?order]
-    [?p :block/children ?b]
-    [?p :block/uid ?parent-uid]
-    [(get-else $ ?p :create/time 0) ?create-time]
-    [(get-else $ ?p :create/user 0) ?create-user]
+(def maybe-time-and-user
+  '[[(get-else $ ?b :create/time 0) ?create-time]
+    [(get-else $ ?b :create/user 0) ?create-user]
     [(get-else $ ?create-user :user/uid "") ?create-user-uid]
     [(get-else $ ?create-user :user/display-name "") ?create-user-display-name]
-    [(get-else $ ?p :edit/time 0) ?edit-time]
-    [(get-else $ ?p :edit/user 0) ?edit-user]
+    [(get-else $ ?b :edit/time 0) ?edit-time]
+    [(get-else $ ?b :edit/user 0) ?edit-user]
     [(get-else $ ?edit-user :user/uid "") ?edit-user-uid]
     [(get-else $ ?edit-user :user/display-name "") ?edit-user-display-name]])
 
-(defn page-csv [[uid title create-time]]
-  [uid title nil nil nil (format-ms create-time)])
+(def pages-extra-query
+  (into
+   '[:find ?uid ?title
+           ?create-time ?create-user-uid ?create-user-display-name
+           ?edit-time ?edit-user-uid ?edit-user-display-name
+     :where
+     [?b :block/uid ?uid]
+     [?b :node/title ?title]]
+   maybe-time-and-user))
 
-(defn block-csv [[uid parent string order create-time]]
-  [uid nil parent string order (format-ms create-time)])
+(def blocks-extra-query
+  (into
+   '[:find ?uid ?parent ?string ?order
+     ?create-time ?create-user-uid ?create-user-display-name
+     ?edit-time ?edit-user-uid ?edit-user-display-name
+     :where
+     [?b :block/uid ?uid]
+     [?b :block/string ?string]
+     [?b :block/order ?order]
+     [?p :block/children ?b]
+     [?p :block/uid ?parent]]
+   maybe-time-and-user))
+
+(defn page-csv
+  [[uid title
+    create-time create-user-uid create-user-display-name
+    edit-time edit-user-uid edit-user-display-name
+    :as v]]
+  (if (-> v count (= 3))
+    [uid title nil nil nil (format-ms create-time)]
+    [uid title nil nil nil
+     (format-ms create-time) create-user-uid create-user-display-name
+     (when edit-time (format-ms edit-time)) edit-user-uid edit-user-display-name]))
+
+(defn block-csv
+  [[uid parent string order
+    create-time create-user-uid create-user-display-name
+    edit-time edit-user-uid edit-user-display-name
+    :as v]]
+  (if (-> v count (= 5))
+    [uid nil parent string order (format-ms create-time)]
+    [uid nil parent string order
+     (format-ms create-time) create-user-uid create-user-display-name
+     (when edit-time (format-ms edit-time)) edit-user-uid edit-user-display-name]))
 
 (defn query->header
   "Extract the :find bindings as strings, stripped of the initial ? if any."
@@ -95,16 +125,20 @@
        (map #(if (str/starts-with? % "?") (subs % 1) %))
        vec))
 
-(def default-header ["uid" "title" "parent" "string" "order" "create-time"])
+(def default-headers ["uid" "title" "parent" "string" "order" "create-time"])
+
+(def extra-headers ["uid" "title" "parent" "string" "order"
+                    "create-time" "create-user-uid" "create-user-display-name"
+                    "edit-time" "edit-user-uid" "edit-user-display-name"])
 
 (defn roam-edn->csv-table
   "Read edn-string as a database, and return a vector of vectors with the output of a query.
    If no query is provided, outputs blocks and pages."
-  ([edn-string]
+  ([headers pages-q blocks-q edn-string]
    (let [db       (read-db edn-string)
-         pages    (d/q pages-query db)
-         blocks   (d/q blocks-query db)]
-     (vec (concat [default-header]
+         pages    (d/q pages-q db)
+         blocks   (d/q blocks-q db)]
+     (vec (concat [headers]
                   (map page-csv pages)
                   (map block-csv blocks)))))
   ([query edn-string]
@@ -118,13 +152,13 @@
   (let [csv    (csv/read-csv csv-str)
         header (first csv)
         data   (rest csv)]
-    (if-not (= (take 5 header) (take 5 default-header))
+    (if-not (= (take 5 header) (take 5 default-headers))
       (throw (ex-info (str "Unsupported header format for conversion, header must start with"
-                           (->> default-header (take 5) vec))
+                           (->> default-headers (take 5) vec))
                       {:header header}))
       data)))
 
-(defmulti convert-csv first)
+(defmulti convert-csv (comp first vector))
 
 (defmethod convert-csv
   "athens.transit"
@@ -141,10 +175,10 @@
   [_format csv-str]
   (let [data (csv-data csv-str)
         conn (roam/create-conn)]
-    (doseq [[uid title parent string order] data]
+    (doseq [[uid title parent string order create-user-time create-user-uid edit-user-time edit-user-uid] data]
       (if (empty? title)
-        (roam/add-block! conn uid parent string order)
-        (roam/add-page! conn uid title)))
+        (roam/add-block! conn uid parent string order create-user-time create-user-uid edit-user-time edit-user-uid)
+        (roam/add-page! conn uid title create-user-time create-user-uid edit-user-time edit-user-uid)))
     (roam/conn-to-json conn)))
 
 (defmethod convert-csv :default
@@ -157,11 +191,12 @@
 (defn write-str [data writer]
   (.write writer data))
 
-(defn convert-ext
-  [convert]
-  (case convert
+(defn format-ext
+  [format]
+  (case format
     "athens.transit" ".transit"
-    "roam.json"      ".json"))
+    "roam.json"      ".json"
+    (throw (ex-info "Unsupported format" {:format format}))))
 
 (defn slurp-convert-spit [input-filename new-ext read-fn write-fn]
   (let [filename-without-ext (subs input-filename 0 (str/last-index-of input-filename "."))
@@ -176,14 +211,17 @@
   (let [{:keys [options arguments summary]} (cli/parse-opts args cli-options)
         {:keys [help pretty-print query extra
                 convert]}                   options
-        input-filename                      (first arguments)]
+        input-filename                      (first arguments)
+        [headers pages-q blocks-q] (if extra
+                                     [extra-headers pages-extra-query blocks-extra-query]
+                                     [default-headers pages-default-query blocks-default-query])]
+
     (cond
       help
       (print-help summary)
 
-      (or (str/blank? input-filename)
-          (not (str/ends-with? input-filename ".edn")))
-      (println "Invalid filename, it must be non-empty and have .edn extension.")
+      (str/blank? input-filename)
+      (println "Invalid filename, it must be non-empty")
 
       pretty-print
       (slurp-convert-spit input-filename ".pp.edn" read-db pprint/pprint)
@@ -191,29 +229,27 @@
       query
       (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table (:query options)) write-csv)
 
-      extra
-      (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table blocks-extra-query) write-csv)
-
       convert
-      (slurp-convert-spit input-filename (convert-ext convert) (partial convert-csv convert) write-str)
+      (slurp-convert-spit input-filename (format-ext convert) (partial convert-csv convert) write-str)
 
       :else
-      (slurp-convert-spit input-filename ".csv" roam-edn->csv-table write-csv))))
+      (slurp-convert-spit input-filename ".csv" (partial roam-edn->csv-table headers pages-q blocks-q) write-csv))))
 
 (comment
   ;; Read the file as a Datascript database
   (-> "./backup.edn" slurp read-db)
 
   ;; Basic query
-  (-> "./backup.edn" slurp roam-edn->csv-table)
+  (->> "./backup.edn" slurp (roam-edn->csv-table default-headers pages-default-query blocks-default-query))
 
   ;; Custom query for uids+blocks
   (->> "./backup.edn" slurp 
       (roam-edn->csv-table
-       '[:find ?uid ?string
+       '[:find ?uid ?string ?p
          :where
          [?b :block/uid ?uid]
-         [?b :block/string ?string]]))
+         [?b :block/string ?string]
+         [?b :block/_children ?p]]))
   
   ; Custom query for all attrs
   (->> "./backup.edn" slurp
