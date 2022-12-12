@@ -1,5 +1,6 @@
 (ns roam-to-csv.main
   (:require [roam-to-csv.athens :as athens]
+            [roam-to-csv.roam :as roam]
             [clojure.string :as str]
             [clojure.edn :as edn]
             [clojure.data.csv :as csv]
@@ -26,7 +27,7 @@
    ["-q" "--query QUERY" "Use a custom Datalog query to create the CSV."
     :parse-fn read-query]
    ["-p" "--pretty-print" "Pretty print the EDN export only."]
-   ["-c" "--convert" "Convert an input csv to another format [athens.transit]"]
+   ["-c" "--convert" "Convert an input csv to another format [athens.transit roam.json]"]
    ["-h" "--help" "Show this message."]])
 
 (defn print-help [summary]
@@ -112,30 +113,55 @@
          header   (query->header query)]
      (into [header] (map vec res)))))
 
-(defn convert-csv [_format csv-str]
-  ;; Only supports athens.transit format now
+(defn csv-data
+  [csv-str]
   (let [csv    (csv/read-csv csv-str)
         header (first csv)
         data   (rest csv)]
-    (if-not (= header default-header)
-      (do
-        (println "Unsupported header format for conversion")
-        (println (str "  got " header))
-        (println (str "  but only support " default-header))
-        ;; TODO: really should have force exit with error codes.
-        "")
-      (let [conn (athens/create-conn)]
-        (doseq [[uid title parent string order] data]
-          (if (empty? title)
-            (athens/add-block! conn uid parent string order)
-            (athens/add-page! conn uid title)))
-        (athens/conn-to-str conn)))))
+    (if-not (= (take 5 header) (take 5 default-header))
+      (throw (ex-info (str "Unsupported header format for conversion, header must start with"
+                           (->> default-header (take 5) vec))
+                      {:header header}))
+      data)))
+
+(defmulti convert-csv first)
+
+(defmethod convert-csv
+  "athens.transit"
+  [_format csv-str]
+  (let [data (csv-data csv-str)
+        conn (athens/create-conn)]
+    (doseq [[uid title parent string order] data]
+      (if (empty? title)
+        (athens/add-block! conn uid parent string order)
+        (athens/add-page! conn uid title)))
+    (athens/conn-to-str conn)))
+
+(defmethod convert-csv "roam.json"
+  [_format csv-str]
+  (let [data (csv-data csv-str)
+        conn (roam/create-conn)]
+    (doseq [[uid title parent string order] data]
+      (if (empty? title)
+        (roam/add-block! conn uid parent string order)
+        (roam/add-page! conn uid title)))
+    (roam/conn-to-json conn)))
+
+(defmethod convert-csv :default
+  [format _csv-str]
+  (throw (ex-info "Unknown convert format" {:format format})))
 
 (defn write-csv [data writer]
   (csv/write-csv writer data))
 
 (defn write-str [data writer]
   (.write writer data))
+
+(defn convert-ext
+  [convert]
+  (case convert
+    "athens.transit" ".transit"
+    "roam.json"      ".json"))
 
 (defn slurp-convert-spit [input-filename new-ext read-fn write-fn]
   (let [filename-without-ext (subs input-filename 0 (str/last-index-of input-filename "."))
@@ -165,13 +191,11 @@
       query
       (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table (:query options)) write-csv)
 
-
       extra
       (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table blocks-extra-query) write-csv)
 
       convert
-      ;; Only supports athens.transit format now
-      (slurp-convert-spit input-filename ".transit" (partial convert-csv convert) write-str)
+      (slurp-convert-spit input-filename (convert-ext convert) (partial convert-csv convert) write-str)
 
       :else
       (slurp-convert-spit input-filename ".csv" roam-edn->csv-table write-csv))))
@@ -203,6 +227,9 @@
 
   ;; Output a query as CSV
   (slurp-convert-spit "./backup.edn" ".csv" (partial roam-edn->csv-table blocks-extra-query) write-csv)
+
+  ;; Convert to athens transit
+  (slurp-convert-spit "./backup.csv" ".transit" (partial convert-csv "athens.transit") write-str)
 
   ;; Convert to athens transit
   (slurp-convert-spit "./backup.csv" ".transit" (partial convert-csv "athens.transit") write-str)
