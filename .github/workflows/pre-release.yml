@@ -5,6 +5,9 @@ name: Pre-Release
 on:
   release:
     types: [prereleased]
+  # NOTE: uncomment the PR trigger to test changes
+  # pull_request:
+  #   branches: [ "master" ]    
 
 jobs:
   release:
@@ -22,42 +25,32 @@ jobs:
             bin-extension: .exe
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       
-      - uses: DeLaGuardo/setup-graalvm@5.0
+      - uses: graalvm/setup-graalvm@v1
         with:
-          graalvm: '21.2.0'
-          java: 'java11'
-          arch: 'amd64'
+          version: 'latest'
+          java-version: '17'
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install clojure tools
-        uses: DeLaGuardo/setup-clojure@3.5
+        uses: DeLaGuardo/setup-clojure@10.1
         with:
-          cli: 1.10.3.933
-          
-      - name: Setup Babashka
-        uses: turtlequeue/setup-babashka@v1.3.0
-        with:
-          babashka-version: 0.6.1
+          cli: 1.11.1.1189
+          bb: 1.0.168
           
       - run: java --version
       - run: bb --version
 
-      - name: Build non-windows binary
+      - name: Build binary
         run: bb native-image
-        if: matrix.os != 'windows-latest'
-
-      - name: Build windows binary
-        run: |
-          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && bb native-image
-        if: matrix.os == 'windows-latest'
-        shell: cmd
 
       - name: Create archive
         run: tar -czf roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz roam-to-csv${{ matrix.bin-extension }}
 
       - name: Add binary to release
+        if: github.event.release.tag_name
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
