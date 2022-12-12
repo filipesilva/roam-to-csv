@@ -72,7 +72,7 @@
                             :block/uid      "uid"
                             :block/children "children"
                             :create/time    "create-time"
-                            :edit/time      "edit/time"
+                            :edit/time      "edit-time"
                             :create/user    ":create/user"
                             :edit/user      ":edit/user"
                             :user/uid       ":user/uid"}
