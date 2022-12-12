@@ -27,7 +27,7 @@
    ["-q" "--query QUERY" "Use a custom Datalog query to create the CSV."
     :parse-fn read-query]
    ["-p" "--pretty-print" "Pretty print the EDN export only."]
-   ["-c" "--convert" "Convert an input csv to another format [athens.transit roam.json]"]
+   ["-c" "--convert FORMAT" "Convert an input csv to another format [athens.transit roam.json]"]
    ["-h" "--help" "Show this message."]])
 
 (defn print-help [summary]
