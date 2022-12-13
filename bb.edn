@@ -38,18 +38,11 @@
                   env)}
   native-image {:doc     "Builds native image"
                 :depends [graalvm uberjar]
-                :task    (do
-                           (shell (str (fs/file graalvm
-                                                "bin"
-                                                (if windows?
-                                                  "gu.cmd"
-                                                  "gu")))
-                                  "install" "native-image")
-                           (shell (str (fs/file graalvm
-                                                "bin"
-                                                (if windows?
-                                                  "native-image.cmd"
-                                                  "native-image")))
-                                  "-jar" "roam-to-csv.jar"
-                                  "--no-fallback"
-                                  "-H:Name=roam-to-csv"))}}}
+                :task    (shell (str (fs/file graalvm
+                                              "bin"
+                                              (if windows?
+                                                "native-image.cmd"
+                                                "native-image")))
+                                "-jar" "roam-to-csv.jar"
+                                "--no-fallback"
+                                "-H:Name=roam-to-csv")}}}
