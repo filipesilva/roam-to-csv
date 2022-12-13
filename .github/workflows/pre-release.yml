@@ -59,3 +59,24 @@ jobs:
           artifacts: "roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz"
           token: ${{ secrets.GITHUB_TOKEN }}
 
+  test-native:
+    runs-on: ${{ matrix.os }}
+    needs: [release]
+    if: github.event.release.tag_name
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@10.1
+        with:
+          bb: 1.0.168
+
+      - run: curl -OL https://github.com/filipesilva/roam-to-csv/releases/download/v0.0.7/roam-to-csv-roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz
+      - run: tar -xvf roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz
+
+      - name: run tests over native bin
+        run: bb test --native
