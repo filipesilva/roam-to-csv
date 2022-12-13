@@ -131,6 +131,11 @@
                     "create-time" "create-user-uid" "create-user-display-name"
                     "edit-time" "edit-user-uid" "edit-user-display-name"])
 
+(defn csv-str [data]
+  (let [writer (StringWriter.)]
+    (csv/write-csv writer data)
+    (str writer)))
+
 (defn roam-edn->csv-table
   "Read edn-string as a database, and return a vector of vectors with the output of a query.
    If no query is provided, outputs blocks and pages."
@@ -138,14 +143,14 @@
    (let [db       (read-db edn-string)
          pages    (d/q pages-q db)
          blocks   (d/q blocks-q db)]
-     (vec (concat [headers]
-                  (map page-csv pages)
-                  (map block-csv blocks)))))
+     (csv-str (vec (concat [headers]
+                           (map page-csv pages)
+                           (map block-csv blocks))))))
   ([query edn-string]
    (let [db       (read-db edn-string)
          res      (d/q query db)
          header   (query->header query)]
-     (into [header] (map vec res)))))
+     (csv-str (into [header] (map vec res))))))
 
 (defn csv-data
   [csv-str]
@@ -185,12 +190,6 @@
   [format _csv-str]
   (throw (ex-info "Unknown convert format" {:format format})))
 
-(defn write-csv [data writer]
-  (csv/write-csv writer data))
-
-(defn write-str [data writer]
-  (.write writer data))
-
 (defn format-ext
   [format]
   (case format
@@ -198,14 +197,14 @@
     "roam.json"      ".json"
     (throw (ex-info "Unsupported format" {:format format}))))
 
-(defn slurp-convert-spit [input-filename new-ext read-fn write-fn]
-  (let [filename-without-ext (subs input-filename 0 (str/last-index-of input-filename "."))
-        output-filename      (str filename-without-ext new-ext)
-        string-writer        (StringWriter.)
-        data                 (-> input-filename slurp read-fn)]
-    ;; TODO: this writer-fn thing is super weird, should be operating just on strings instead.
-    (write-fn data string-writer)
-    (spit output-filename (str string-writer))))
+(defn slurp-xform-spit
+  ([input-filename new-ext xform]
+   (let [filename-without-ext (subs input-filename 0 (str/last-index-of input-filename "."))
+         output-filename      (str filename-without-ext new-ext)]
+     (->> input-filename
+          slurp
+          xform
+          (spit output-filename)))))
 
 (defn -main [& args]
   (let [{:keys [options arguments summary]} (cli/parse-opts args cli-options)
@@ -224,16 +223,16 @@
       (println "Invalid filename, it must be non-empty")
 
       pretty-print
-      (slurp-convert-spit input-filename ".pp.edn" read-db pprint/pprint)
+      (slurp-xform-spit input-filename ".pp.edn" (comp pprint/pprint read-db))
 
       query
-      (slurp-convert-spit input-filename ".csv"  (partial roam-edn->csv-table (:query options)) write-csv)
+      (slurp-xform-spit input-filename ".csv"  (partial roam-edn->csv-table (:query options)))
 
       convert
-      (slurp-convert-spit input-filename (format-ext convert) (partial convert-csv convert) write-str)
+      (slurp-xform-spit input-filename (format-ext convert) (partial convert-csv convert))
 
       :else
-      (slurp-convert-spit input-filename ".csv" (partial roam-edn->csv-table headers pages-q blocks-q) write-csv))))
+      (slurp-xform-spit input-filename ".csv" (partial roam-edn->csv-table headers pages-q blocks-q)))))
 
 (comment
   ;; Read the file as a Datascript database
@@ -259,16 +258,16 @@
           [?e ?attr]]))
 
   ;; Output basic query as CSV
-  (slurp-convert-spit "./backup.edn" ".csv" roam-edn->csv-table write-csv)
+  (slurp-xform-spit "./backup.edn" ".csv" roam-edn->csv-table)
 
   ;; Output a query as CSV
-  (slurp-convert-spit "./backup.edn" ".csv" (partial roam-edn->csv-table blocks-extra-query) write-csv)
+  (slurp-xform-spit "./backup.edn" ".csv" (partial roam-edn->csv-table blocks-extra-query))
 
   ;; Convert to athens transit
-  (slurp-convert-spit "./backup.csv" ".transit" (partial convert-csv "athens.transit") write-str)
+  (slurp-xform-spit "./backup.csv" ".transit" (partial convert-csv "athens.transit"))
 
   ;; Convert to athens transit
-  (slurp-convert-spit "./backup.csv" ".transit" (partial convert-csv "athens.transit") write-str)
+  (slurp-xform-spit "./backup.csv" ".transit" (partial convert-csv "athens.transit"))
 
   ;;
   )

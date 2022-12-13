@@ -1,36 +1,48 @@
 {:tasks
  {:requires ([babashka.fs :as fs]
              [clojure.string :as str])
-  :init (def windows? (str/starts-with? (System/getProperty "os.name")
-                                        "Windows"))
-  run-main {:doc "Run main"
-            :task (apply clojure "-M -m roam-to-csv.main" *command-line-args*)}
-  uberjar {:doc "Builds uberjar"
-           :task (when (seq (fs/modified-since "roam-to-csv.jar"
-                                               ["deps.edn" "build.clj" "src"]))
-                   (clojure "-T:build uber"))}
-  run-uber {:doc "Run uberjar"
-            :depends [uberjar]
-            :task (apply shell "java -jar roam-to-csv.jar" *command-line-args*)}
-  graalvm {:doc "Checks GRAALVM_HOME env var"
-           :task
-           (let [env (System/getenv "GRAALVM_HOME")]
-             (assert env "Set GRAALVM_HOME")
-             env)}
-  native-image {:doc "Builds native image"
+  :init     (def windows? (str/starts-with? (System/getProperty "os.name")
+                                            "Windows"))
+  run-main  {:doc  "Run main"
+             :task (apply clojure "-M -m roam-to-csv.main" *command-line-args*)}
+
+  test {:doc  "Test"
+        :task (let [native? (-> *command-line-args* first (= "--native"))
+                    bin     (if native?
+                              (if windows?
+                                "roam-to-csv.exe"
+                                "./roam-to-csv")
+                              "bb run-main")
+                    argsv   ["test-goldens/simple/backup.edn"
+                             "test-goldens/simple/backup.csv --convert roam.json"
+                             "test-goldens/extra/backup.edn --extra"
+                             "test-goldens/extra/backup.csv --convert roam.json"]]
+                (doseq [args argsv]
+                  (let [cmd (str bin " " args)]
+                    (println (str "Running `" cmd "`"))
+                    (shell cmd)))
+                (shell "git diff --exit-code ./test-goldens/"))}
+
+  ;; native executable tasks
+  uberjar      {:doc  "Builds uberjar"
+                :task (when (seq (fs/modified-since "roam-to-csv.jar"
+                                                    ["deps.edn" "build.clj" "src"]))
+                        (clojure "-T:build uber"))}
+  run-uber     {:doc     "Run uberjar"
+                :depends [uberjar]
+                :task    (apply shell "java -jar roam-to-csv.jar" *command-line-args*)}
+  graalvm      {:doc "Checks GRAALVM_HOME env var"
+                :task
+                (let [env (System/getenv "GRAALVM_HOME")]
+                  (assert env "Set GRAALVM_HOME")
+                  env)}
+  native-image {:doc     "Builds native image"
                 :depends [graalvm uberjar]
-                :task (do
-                        (shell (str (fs/file graalvm
-                                             "bin"
-                                             (if windows?
-                                               "gu.cmd"
-                                               "gu")))
-                               "install" "native-image")
-                        (shell (str (fs/file graalvm
-                                             "bin"
-                                             (if windows?
-                                               "native-image.cmd"
-                                               "native-image")))
-                               "-jar" "roam-to-csv.jar"
-                               "--no-fallback"
-                               "-H:Name=roam-to-csv"))}}}
+                :task    (shell (str (fs/file graalvm
+                                              "bin"
+                                              (if windows?
+                                                "native-image.cmd"
+                                                "native-image")))
+                                "-jar" "roam-to-csv.jar"
+                                "--no-fallback"
+                                "-H:Name=roam-to-csv")}}}
