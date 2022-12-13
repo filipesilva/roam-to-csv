@@ -82,7 +82,7 @@ jobs:
         with:
           bb: 1.0.168
 
-      - run: curl -OL https://github.com/filipesilva/roam-to-csv/releases/download/v0.0.7/roam-to-csv-roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz
+      - run: curl -OL https://github.com/filipesilva/roam-to-csv/releases/download/v0.0.7/roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz
       - run: tar -xvf roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz
 
       - name: run tests over native bin
