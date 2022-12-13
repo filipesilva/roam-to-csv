@@ -66,6 +66,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            platform-name: linux-amd64
+          - os: macos-latest
+            platform-name: macos-amd64
+          - os: windows-latest
+            platform-name: windows-amd64
 
     steps:
       - uses: actions/checkout@v3
