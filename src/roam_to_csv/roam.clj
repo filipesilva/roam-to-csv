@@ -15,9 +15,6 @@
                     :db/valueType   :db.type/ref}
    :user/uid       {:db/unique :db.unique/identity}})
 
-(def orphans-page-uid "orphans")
-(def orphans-page-title "orphans")
-
 (defn merge-time-and-user
   [x [create-user-time create-user-uid _ edit-user-time edit-user-uid]]
   (merge x
@@ -31,18 +28,14 @@
            {:edit/user {:user/uid edit-user-uid}})))
 
 (defn add-block! [conn block-uid parent-uid string order & rest]
-  (let [parent-uid' (:block/uid
-                     (or (d/entity @conn [:block/uid parent-uid])
-                         ;; NB: this page is created in create-conn
-                         (d/entity @conn [:block/uid orphans-page-uid])))]
-    (d/transact! conn [{:block/uid      parent-uid'
-                        :block/children [(merge-time-and-user
-                                          {:block/uid    block-uid
-                                           :block/string string
-                                           :block/order  order
-                                           ;; Would be better if we actually had this information.
-                                           :block/open   true}
-                                          rest)]}])))
+  (d/transact! conn [{:block/uid      parent-uid
+                      :block/children [(merge-time-and-user
+                                        {:block/uid    block-uid
+                                         :block/string string
+                                         :block/order  order
+                                         ;; Would be better if we actually had this information.
+                                         :block/open   true}
+                                        rest)]}]))
 
 (defn add-page! [conn page-uid page-title & rest]
   (d/transact! conn [(merge-time-and-user
@@ -51,10 +44,7 @@
                       rest)]))
 
 (defn create-conn []
-  (let [conn (d/create-conn schema)]
-    ;; We put all orphans in a special page.
-    (add-page! conn orphans-page-uid orphans-page-title)
-    conn))
+  (d/create-conn schema))
 
 (defn conn-to-json [conn]
   (let [db                 @conn
