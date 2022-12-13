@@ -5,11 +5,11 @@
 .nrepl-port
 
 # test files
-backup.edn
-backup.csv
-backup.pp.edn
-backup.transit
-backup.json
+/backup.edn
+/backup.csv
+/backup.pp.edn
+/backup.transit
+/backup.json
 
 # generated jar and binaries.
 roam-to-csv*
