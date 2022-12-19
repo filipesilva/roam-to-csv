@@ -22,3 +22,5 @@ target/
 
 # Mac stuff
 .DS_Store
+
+.clj-kondo

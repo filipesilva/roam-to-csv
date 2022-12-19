@@ -15,8 +15,17 @@
                               "bb run-main")
                     argsv   ["test-goldens/simple/backup.edn"
                              "test-goldens/simple/backup.csv --convert roam.json"
+                             "test-goldens/simple/help.edn"
+                             "test-goldens/simple/help.csv --convert roam.json"
+                             "test-goldens/simple/bible.edn"
+                             "test-goldens/simple/bible.csv --convert roam.json"
+                             "test-goldens/simple/dictionary.csv --convert roam.json"
                              "test-goldens/extra/backup.edn --extra"
-                             "test-goldens/extra/backup.csv --convert roam.json"]]
+                             "test-goldens/extra/backup.csv --convert roam.json"
+                             "test-goldens/extra/help.edn --extra"
+                             "test-goldens/extra/help.csv --convert roam.json"
+                             "test-goldens/extra/bible.edn --extra"
+                             "test-goldens/extra/bible.csv --convert roam.json"]]
                 (doseq [args argsv]
                   (let [cmd (str bin " " args)]
                     (println (str "Running `" cmd "`"))
