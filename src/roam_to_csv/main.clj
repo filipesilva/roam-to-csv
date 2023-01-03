@@ -131,7 +131,7 @@
     [uid nil parent string order
      (format-ms create-time) create-user-uid create-user-display-name
      (when edit-time (format-ms edit-time)) edit-user-uid edit-user-display-name
-     (if (boolean open) 1 0) (vec->csv-str path) (vec->csv-str refs)]))
+     (if open 1 0) (vec->csv-str path) (vec->csv-str refs)]))
 
 (defn query->header
   "Extract the :find bindings as strings, stripped of the initial ? if any."

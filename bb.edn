@@ -54,4 +54,5 @@
                                                 "native-image")))
                                 "-jar" "roam-to-csv.jar"
                                 "--no-fallback"
+                                "-H:ReflectionConfigurationFiles=./reflect-config.json"
                                 "-H:Name=roam-to-csv")}}}
