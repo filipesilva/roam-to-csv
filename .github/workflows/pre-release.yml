@@ -46,6 +46,9 @@ jobs:
       - name: Build binary
         run: bb native-image
 
+      - name: Check binary runs
+        run: ./roam-to-csv --help
+
       - name: Create archive
         run: tar -czf roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz roam-to-csv${{ matrix.bin-extension }}
 
