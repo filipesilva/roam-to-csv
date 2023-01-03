@@ -50,28 +50,37 @@
 (defn create-conn []
   (d/create-conn schema))
 
+(defn sort-children
+  [{:keys [block/children] :as x}]
+  (if children
+    (assoc x :block/children (->> children
+                                  (sort-by :block/order)
+                                  (map #(dissoc % :block/order))))
+    x))
+
 (defn conn-to-json [conn]
-  (let [db                 @conn
-        page-eids          (->> (d/datoms @conn :avet :node/title) (map :e))
-        with-children      (d/pull-many
-                            db
-                            '[:node/title :block/uid :block/string
-                              :create/time :edit/time
-                              {:create/user [:user/uid]}
-                              {:edit/user [:user/uid]}
-                              {:block/children ...}]
-                            page-eids)
-        replacements       {:block/string   "string"
-                            :node/title     "title"
-                            :block/uid      "uid"
-                            :block/children "children"
-                            :create/time    "create-time"
-                            :edit/time      "edit-time"
-                            :create/user    ":create/user"
-                            :edit/user      ":edit/user"
-                            :user/uid       ":user/uid"}
-        with-renamed-props (walk/postwalk-replace replacements with-children)
-        as-json            (json/write-str with-renamed-props)]
+  (let [db                    @conn
+        page-eids             (->> (d/datoms @conn :avet :node/title) (map :e))
+        with-children         (d/pull-many
+                               db
+                               '[:node/title :block/uid :block/string :block/order
+                                 :create/time :edit/time
+                                 {:create/user [:user/uid]}
+                                 {:edit/user [:user/uid]}
+                                 {:block/children ...}]
+                               page-eids)
+        with-ordered-children (walk/postwalk sort-children with-children)
+        replacements          {:block/string   "string"
+                               :node/title     "title"
+                               :block/uid      "uid"
+                               :block/children "children"
+                               :create/time    "create-time"
+                               :edit/time      "edit-time"
+                               :create/user    ":create/user"
+                               :edit/user      ":edit/user"
+                               :user/uid       ":user/uid"}
+        with-renamed-props    (walk/postwalk-replace replacements with-ordered-children)
+        as-json               (json/write-str with-renamed-props)]
     as-json))
 
 (comment

@@ -30,7 +30,7 @@
                   (let [cmd (str bin " " args)]
                     (println (str "Running `" cmd "`"))
                     (shell cmd)))
-                (shell "git diff --exit-code ./test-goldens/"))}
+                (shell "git diff --exit-code --stat ./test-goldens/"))}
 
   ;; native executable tasks
   uberjar      {:doc  "Builds uberjar"
