@@ -6,23 +6,18 @@ on:
   release:
     types: [prereleased]
   # NOTE: uncomment the PR trigger to test changes
-  # pull_request:
-  #   branches: [ "master" ]    
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
   release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [macos-latest]
         include:
-          - os: ubuntu-latest
-            platform-name: linux-amd64
           - os: macos-latest
             platform-name: macos-amd64
-          - os: windows-latest
-            platform-name: windows-amd64
-            bin-extension: .exe
 
     steps:
       - uses: actions/checkout@v3
@@ -59,6 +54,8 @@ jobs:
           tag: ${{ github.event.release.tag_name }}
           artifacts: "roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz"
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: ./roam-to-csv --help
 
   test-native:
     runs-on: ${{ matrix.os }}
