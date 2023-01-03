@@ -28,7 +28,7 @@
 ;; --query-file
 ;; --query-params
 (def cli-options
-  [["-e" "--extra" "Include extra information, like edit time and user."]
+  [["-e" "--extra" "Include extra information: user, edit, open, path, refs."]
    ["-q" "--query QUERY" "Use a custom Datalog query to create the CSV."
     :parse-fn read-query]
    ["-p" "--pretty-print" "Pretty print the EDN export only."]

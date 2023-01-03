@@ -67,7 +67,7 @@ Usage:
   roam-to-csv ./backup.edn
 
 Options:
-  -e, --extra         Include extra information, like edit time and user.
+  -e, --extra         Include extra information: user, edit, open, path, refs.
   -q, --query QUERY   Use a custom Datalog query to create the CSV.
   -p, --pretty-print  Pretty print the EDN export only.
   -c, --convert       Convert an input csv to another format [athens.transit roam.json]
