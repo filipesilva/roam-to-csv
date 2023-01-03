@@ -51,7 +51,7 @@ jobs:
 
       - name: Add binary to release
         if: github.event.release.tag_name
-        uses: ncipollo/release-action@v2
+        uses: ncipollo/release-action@v1
         with:
           omitBody: true
           allowUpdates: true
