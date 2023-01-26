@@ -18,11 +18,16 @@ jobs:
         include:
           - os: ubuntu-latest
             platform-name: linux-amd64
+            archive_util: tar
           - os: macos-latest
             platform-name: macos-amd64
+            archive_util: tar
           - os: windows-latest
             platform-name: windows-amd64
             bin-extension: .exe
+            # The default tar in macos executors can sometimes corrupt bin files, but gtar doesn't.
+            # See https://github.com/actions/runner-images/issues/2619#issuecomment-1041125521
+            archive_util: gtar
 
     steps:
       - uses: actions/checkout@v3
@@ -50,7 +55,7 @@ jobs:
         run: ./roam-to-csv --help
 
       - name: Create archive
-        run: tar -czf roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz roam-to-csv${{ matrix.bin-extension }}
+        run: ${{ matrix.archive_util }} -czf roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz roam-to-csv${{ matrix.bin-extension }}
 
       - name: Add binary to release
         if: github.event.release.tag_name
