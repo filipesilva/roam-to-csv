@@ -16,17 +16,17 @@
    :user/uid       {:db/unique :db.unique/identity}})
 
 (defn merge-time-and-user
-  [x [create-user-time create-user-uid _ edit-user-time edit-user-uid]]
+  [x [create-time create-user-uid edit-time edit-user-uid]]
   (merge x
-         (when create-user-time
+         (when create-time
            (try
-             {:create/time (-> create-user-time t/instant inst-ms)}
+             {:create/time (-> create-time t/instant inst-ms)}
              (catch Exception _)))
          (when create-user-uid
            {:create/user {:user/uid create-user-uid}})
-         (when edit-user-time
+         (when edit-time
            (try
-             {:edit/time (-> edit-user-time t/instant inst-ms)}
+             {:edit/time (-> edit-time t/instant inst-ms)}
              (catch Exception _)))
          (when edit-user-uid
            {:edit/user {:user/uid edit-user-uid}})))

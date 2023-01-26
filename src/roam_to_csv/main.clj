@@ -208,17 +208,20 @@
         header (query->header q)]
     (into [header] (map vec res))))
 
+(defn csv-row->map
+  [header row]
+  (zipmap header row))
 
 (defn csv-data
   [csv-str]
   (let [csv    (csv/read-csv csv-str)
         header (first csv)
-        data   (rest csv)]
-    (if-not (= (take 5 header) (take 5 simple-headers))
-      (throw (ex-info (str "Unsupported header format for conversion, header must start with"
-                           (->> simple-headers (take 5) vec))
+        data   (rest csv)
+        min-headers (->> simple-headers (take 5) vec)]
+    (if-not (every? (set header) min-headers)
+      (throw (ex-info (str "Unsupported header format for conversion, header must contain at least" min-headers)
                       {:header header}))
-      data)))
+      (map (partial csv-row->map header) data))))
 
 (defmulti convert-csv
   (fn [type _edn-string]
@@ -229,7 +232,7 @@
   [_format csv-str]
   (let [data (csv-data csv-str)
         conn (athens/create-conn)]
-    (doseq [[uid title parent string order] data]
+    (doseq [{:strs [uid title parent string order]} data]
       (if (empty? title)
         (athens/add-block! conn uid parent string order)
         (athens/add-page! conn uid title)))
@@ -239,10 +242,10 @@
   [_format csv-str]
   (let [data (csv-data csv-str)
         conn (roam/create-conn)]
-    (doseq [[uid title parent string order create-user-time create-user-uid edit-user-time edit-user-uid] data]
+    (doseq [{:strs [uid title parent string order create-time create-user-uid edit-time edit-user-uid]} data]
       (if (empty? title)
-        (roam/add-block! conn uid parent string order create-user-time create-user-uid edit-user-time edit-user-uid)
-        (roam/add-page! conn uid title create-user-time create-user-uid edit-user-time edit-user-uid)))
+        (roam/add-block! conn uid parent string order create-time create-user-uid edit-time edit-user-uid)
+        (roam/add-page! conn uid title create-time create-user-uid edit-time edit-user-uid)))
     (roam/conn-to-json conn)))
 
 (defmethod convert-csv :default
