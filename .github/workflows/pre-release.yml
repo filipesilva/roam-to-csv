@@ -44,9 +44,15 @@ jobs:
         with:
           cli: 1.11.1.1189
           bb: 1.0.168
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
           
       - run: java --version
       - run: bb --version
+      - run: node --version
+      - run: yarn
 
       - name: Build binary
         run: bb native-image
@@ -128,6 +134,21 @@ jobs:
           prerelease: true
           tag: ${{ github.event.release.tag_name }}
           artifacts: "roam-to-csv-${{ github.event.release.tag_name }}-${{ matrix.platform-name }}.tar.gz"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: build js lib
+        if: matrix.os == 'ubuntu-latest'
+        run: bb js-lib
+
+      - name: Add js lib to release
+        if: matrix.os == 'ubuntu-latest' && github.event.release.tag_name
+        uses: ncipollo/release-action@v1
+        with:
+          omitBody: true
+          allowUpdates: true
+          prerelease: true
+          tag: ${{ github.event.release.tag_name }}
+          artifacts: "out/roam-to-csv.js"
           token: ${{ secrets.GITHUB_TOKEN }}
 
   test-native:

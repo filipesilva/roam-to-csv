@@ -26,9 +26,21 @@ jobs:
         with:
           cli: 1.11.1.1189
           bb: 1.0.168
-          
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
       - run: java --version
       - run: bb --version
+      - run: node --version
+      - run: yarn
 
-      - name: run tests
+      - name: run java tests
         run: bb test
+
+      - name: build js lib
+        run: bb js-lib
+
+      - name: run js tests
+        run: bb test --js

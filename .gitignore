@@ -13,12 +13,16 @@
 
 # generated jar and binaries.
 roam-to-csv*
+!roam-to-csv-cli.js
 
 # clj-kondo cache
 .clj-kondo/.cache
 
 # build files
 target/
+.shadow-cljs/
+node_modules/
+out/
 
 # Mac stuff
 .DS_Store

@@ -6,13 +6,33 @@
   run-main  {:doc  "Run main"
              :task (apply clojure "-M -m roam-to-csv.main" *command-line-args*)}
 
+  run-main-js {:doc  "Run main js"
+               :task (shell (->> *command-line-args*
+                                 (str/join " ")
+                                 (str "node ./roam-to-csv-cli.js ")))}
+
   test {:doc  "Test"
         :task (let [native? (-> *command-line-args* first (= "--native"))
-                    bin     (if native?
-                              (if windows?
-                                "roam-to-csv.exe"
-                                "./roam-to-csv")
-                              "bb run-main")
+                    js?     (-> *command-line-args* first (= "--js"))
+                    bin     (cond
+                              native? (if windows?
+                                        "roam-to-csv.exe"
+                                        "./roam-to-csv")
+                              js?      "node ./roam-to-csv-cli.js"
+                              :else    "bb run-main")
+                    outputs ["test-goldens/simple/backup.csv"
+                             "test-goldens/simple/backup.json"
+                             "test-goldens/simple/help.csv"
+                             "test-goldens/simple/help.json"
+                             "test-goldens/simple/bible.csv"
+                             "test-goldens/simple/bible.json"
+                             "test-goldens/simple/dictionary.json"
+                             "test-goldens/extra/backup.csv"
+                             "test-goldens/extra/backup.json"
+                             "test-goldens/extra/help.csv"
+                             "test-goldens/extra/help.json"
+                             "test-goldens/extra/bible.csv"
+                             "test-goldens/extra/bible.json"]
                     argsv   ["test-goldens/simple/backup.edn"
                              "test-goldens/simple/backup.csv --convert roam.json"
                              "test-goldens/simple/help.edn"
@@ -26,11 +46,21 @@
                              "test-goldens/extra/help.csv --convert roam.json"
                              "test-goldens/extra/bible.edn --extra"
                              "test-goldens/extra/bible.csv --convert roam.json"]]
+                (println "Cleaning outputs")
+                (shell (->> outputs
+                            (str/join " ")
+                            (str "rm -f ")))
                 (doseq [args argsv]
                   (let [cmd (str bin " " args)]
-                    (println (str "Running `" cmd "`"))
+                    (println (str "Testing `" cmd "`"))
                     (shell cmd)))
                 (shell "git diff --exit-code --stat ./test-goldens/"))}
+  js-lib     {:doc  "Builds js lib"
+              :task (clojure (str "-M:shadow-cljs "
+                                  (if (-> *command-line-args* first (= "--watch"))
+                                    "watch"
+                                    "release")
+                                  " lib"))}
 
   ;; native executable tasks
   uberjar      {:doc  "Builds uberjar"

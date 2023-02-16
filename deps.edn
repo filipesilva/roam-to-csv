@@ -1,5 +1,9 @@
-{:deps {org.clojure/clojure {:mvn/version "1.10.3"}
+{:deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/clojurescript {:mvn/version "1.11.60"}
         org.clojure/data.csv {:mvn/version "1.0.0"}
+        com.github.filipesilva/clojurescript.csv {:git/sha "5192af92f2ec185b10e8b9d51ef8977eff7282e4"}
+        ;;testdouble/clojurescript.csv {:mvn/version "0.7.0"}
+        com.github.pkpkpk/cljs-node-io {:mvn/version "2.0.332"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.clojure/tools.cli {:mvn/version "1.0.206"}
         datascript/datascript {:mvn/version "1.2.1"}
@@ -8,4 +12,6 @@
  :aliases
  {:native-deps {:extra-deps {com.github.clj-easy/graal-build-time {:mvn/version "0.1.0"}}}
   :build {:deps {io.github.clojure/tools.build {:git/tag "v0.3.0" :git/sha "e418fc9"}}
-          :ns-default build}}}
+          :ns-default build}
+  :shadow-cljs {:extra-deps {thheller/shadow-cljs {:mvn/version "2.20.20"}}
+                :main-opts ["-m" "shadow.cljs.devtools.cli"]}}}

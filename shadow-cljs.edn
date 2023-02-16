@@ -1,0 +1,6 @@
+{:deps true
+ :builds {:lib {:target :node-library
+                :output-dir "out"
+                :output-to "out/roam-to-csv.js"
+                :exports-var roam-to-csv.main/node-exports
+                :compiler-options {:externs ["datascript/externs.js"]}}}}
